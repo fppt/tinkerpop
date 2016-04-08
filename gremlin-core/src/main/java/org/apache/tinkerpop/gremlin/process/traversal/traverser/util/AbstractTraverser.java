@@ -78,6 +78,17 @@ public abstract class AbstractTraverser<T> implements Traverser<T>, Traverser.Ad
     }
 
     @Override
+    public void dropLabels(final Set<String> labels) {
+
+    }
+
+    @Override
+    public void dropPath() {
+
+    }
+
+
+    @Override
     public void set(final T t) {
         this.t = t;
     }

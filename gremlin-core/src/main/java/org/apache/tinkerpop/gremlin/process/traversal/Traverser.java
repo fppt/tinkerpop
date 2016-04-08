@@ -183,6 +183,10 @@ public interface Traverser<T> extends Serializable, Comparable<Traverser<T>>, Cl
 
         public void addLabels(final Set<String> labels);
 
+        public void dropLabels(final Set<String> labels);
+
+        public void dropPath();
+
         /**
          * Set the current object location of the traverser.
          *
