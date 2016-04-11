@@ -24,10 +24,12 @@ import org.apache.tinkerpop.gremlin.process.traversal.Pop;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
@@ -81,6 +83,22 @@ public class MutablePath implements Path, Serializable {
     @Override
     public Path extend(final Set<String> labels) {
         this.labels.get(this.labels.size() - 1).addAll(labels);
+        return this;
+    }
+
+    @Override
+    public Path retract(final Set<String> labels) {
+        for (int i = this.labels.size() - 1; i >= 0; i--) {
+            for (final String label : labels) {
+                if (this.labels().get(i).contains(label)) {
+                    this.labels.get(i).remove(label);
+                    if (this.labels.get(i).size() == 0) {
+                        this.objects.remove(i);
+                        continue;
+                    }
+                }
+            }
+        }
         return this;
     }
 

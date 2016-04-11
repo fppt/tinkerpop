@@ -297,4 +297,27 @@ public class TinkerGraphPlayTest {
         graph.vertices(50).next().addEdge("uncle", graph.vertices(70).next());
         logger.info(TimeUtil.clockWithResult(500, () -> g.V().match(as("a").out("knows").as("b"), as("a").out("uncle").as("b")).toList()).toString());
     }
+
+    @Test
+    public void testPaths() {
+        final Graph graph = TinkerGraph.open();
+        final GraphTraversalSource g = graph.traversal();
+
+        //     (b)
+        // (a)      (d)  (e)
+        //     (c)
+        Vertex a = graph.addVertex("a");
+        Vertex b = graph.addVertex("b");
+        Vertex c = graph.addVertex("c");
+        Vertex d = graph.addVertex("d");
+        Vertex e = graph.addVertex("e");
+
+        a.addEdge("knows", b);
+        a.addEdge("knows", c);
+        b.addEdge("knows", d);
+        c.addEdge("knows", d);
+        d.addEdge("knows", e);
+
+        g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
+    }
 }

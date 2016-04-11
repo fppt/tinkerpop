@@ -77,6 +77,30 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
     }
 
     @Override
+    public Path retract(final Set<String> labels) {
+        return retract(null, labels);
+    }
+
+    private Path retract(final ImmutablePath parentPath, final Set<String> labels) {
+        if (!Collections.disjoint(this.currentLabels, labels)) {
+            // we found at least one label so we're going to have to branch this path
+            final ImmutablePath clonedPath = new ImmutablePath(this.previousPath, this.currentObject, this.currentLabels);
+            for(final String label : labels) {
+                clonedPath.currentLabels.remove(label);
+            }
+            // if no more labels, drop object
+            if(clonedPath.currentLabels.size() == 0) {
+                this.currentObject = null;
+            }
+            // clone child paths
+            parentPath.previousPath = clonedPath;
+        } else {
+            ((ImmutablePath)this.previousPath).retract(this, labels);
+        }
+        return this;
+    }
+
+    @Override
     public <A> A get(final int index) {
         return (this.size() - 1) == index ? (A) this.currentObject : this.previousPath.get(index);
     }
@@ -196,6 +220,11 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
 
         @Override
         public Path extend(final Set<String> labels) {
+            throw new UnsupportedOperationException("A head path can not have labels added to it");
+        }
+
+        @Override
+        public Path retract(final Set<String> labels) {
             throw new UnsupportedOperationException("A head path can not have labels added to it");
         }
 
