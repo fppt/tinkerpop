@@ -23,10 +23,13 @@ import org.apache.tinkerpop.gremlin.process.traversal.Pop;
 import org.apache.tinkerpop.gremlin.structure.Element;
 
 import java.io.Serializable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -78,27 +81,125 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
 
     @Override
     public Path retract(final Set<String> labels) {
-        return retract(null, labels);
+        ImmutablePath parent;
+        ImmutablePath child;
+        if(this.previousPath != null) {
+            parent = this;
+            child = (ImmutablePath)this.previousPath;
+        } else {
+            parent = (ImmutablePath)this.previousPath;
+            child = this;
+        }
+
+        // parents can be a mixture of ImmutablePaths and collpased
+        // cloned ImmutablePaths that are a result of branching
+        List<Object> parents = new ArrayList<>();
+        ImmutablePath previous = null;
+        parents.add(parent);
+        while(!(child.previousPath instanceof TailPath)) {
+            List<Set<String>> childLabels = child.labels();
+            // found labels
+            List<String> foundLabels = new ArrayList<>();
+            for(Set<String> l : childLabels) {
+                if(!Collections.disjoint(l, labels)) {
+                    for(String ll : labels) {
+                        if(l.contains(ll)) {
+                            foundLabels.add(ll);
+                        }
+                    }
+                }
+            }
+            if(foundLabels.isEmpty()) {
+               continue;
+            }
+            // split path
+            // clone child
+            ImmutablePath clone = cloneImmutablePath(child);
+
+            // walk back up and build parent clones or reuse
+            // other previously cloned paths
+            for(int i = parents.size() - 1; i  >= 0; i--) {
+                final Object o = parents.get(i);
+                if(o instanceof ImmutablePath) {
+                    ImmutablePath p = (ImmutablePath)o;
+                    final ImmutablePath clonedP = cloneImmutablePath(p);
+                    if (previous == null) {
+                        clonedP.previousPath = clone;
+                    } else {
+                        clonedP.previousPath = previous;
+                    }
+                    previous = clonedP;
+                } else {
+                    previous = ((ImmutablePath)o);
+                }
+            }
+
+            parent = child;
+            child = (ImmutablePath)child.previousPath;
+        }
+
+        return previous;
     }
 
-    private Path retract(final ImmutablePath parentPath, final Set<String> labels) {
-        if (!Collections.disjoint(this.currentLabels, labels)) {
-            // we found at least one label so we're going to have to branch this path
-            final ImmutablePath clonedPath = new ImmutablePath(this.previousPath, this.currentObject, this.currentLabels);
-            for(final String label : labels) {
-                clonedPath.currentLabels.remove(label);
-            }
-            // if no more labels, drop object
-            if(clonedPath.currentLabels.size() == 0) {
-                this.currentObject = null;
-            }
-            // clone child paths
-            parentPath.previousPath = clonedPath;
-        } else {
-            ((ImmutablePath)this.previousPath).retract(this, labels);
-        }
-        return this;
+    private static ImmutablePath cloneImmutablePath(final ImmutablePath path) {
+        return new ImmutablePath(path.previousPath, path.currentObject, new HashSet<>(path.currentLabels));
     }
+
+//    @Override
+//    public Path retract(final Set<String> labels) {
+//        if(!Collections.disjoint(this.currentLabels, labels)) {
+//            // clone and split
+//            final ImmutablePath clonedPath = new ImmutablePath(this.previousPath,
+//                    this.currentObject, new LinkedHashSet<>(this.currentLabels));
+//            int dropCount = 0;
+//            for(final String label : labels) {
+//                clonedPath.currentLabels.remove(label);
+//                dropCount++;
+//            }
+//            if(clonedPath.currentLabels.size() == 0) {
+//                // straight up drop it
+//                clonedPath.currentObject = null;
+//            }
+//            if(dropCount == labels.size()) {
+//                return clonedPath;
+//            } else {
+//                //keep on going down the line
+//                return retract(clonedPath, labels);
+//            }
+//        } else {
+//            List<ImmutablePath> crumbs = new ArrayList<>();
+//            ImmutablePathImpl p = this;
+//            while(!(p instanceof TailPath)) {
+//                p = ((ImmutablePath)p).previousPath;
+//            }
+//        }
+//        return null;
+//    }
+//
+//    private Path retract(final ImmutablePath parentPath, final Set<String> labels) {
+//        final ImmutablePath childPath = (ImmutablePath)parentPath.previousPath;
+//        if (Collections.disjoint(childPath.currentLabels, labels)) {
+//            return retract((ImmutablePath)childPath.previousPath, labels);
+//        } else {
+//            // clone and split
+//            final ImmutablePath clonedPath = new ImmutablePath(childPath,
+//                    this.currentObject, new LinkedHashSet<>(this.currentLabels));
+//            int dropCount = 0;
+//            for(final String label : labels) {
+//                clonedPath.currentLabels.remove(label);
+//                dropCount++;
+//            }
+//            if(clonedPath.currentLabels.size() == 0) {
+//                // straight up drop it
+//                clonedPath.currentObject = null;
+//            }
+//        }
+//        return null;
+//    }
+
+//    public ImmutablePath getPrevious() {
+//        return (ImmutablePath)this.previousPath;
+//    }
 
     @Override
     public <A> A get(final int index) {

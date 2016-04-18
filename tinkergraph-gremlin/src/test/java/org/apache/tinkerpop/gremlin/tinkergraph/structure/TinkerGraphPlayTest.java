@@ -318,6 +318,8 @@ public class TinkerGraphPlayTest {
         c.addEdge("knows", d);
         d.addEdge("knows", e);
 
+        a.addEdge("knows", b, "a", 1);
+
         g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
     }
 }
