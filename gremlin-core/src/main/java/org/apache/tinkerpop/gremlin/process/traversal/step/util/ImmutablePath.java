@@ -91,115 +91,72 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
             child = this;
         }
 
-        // parents can be a mixture of ImmutablePaths and collpased
+        if(!Collections.disjoint(parent.currentLabels, labels)) {
+            ImmutablePath clonedParent = cloneImmutablePath(parent);
+            clonedParent.currentLabels.removeAll(labels);
+            parent = clonedParent;
+        }
+
+        // store the head and return it at the end of this
+        ImmutablePath head = parent;
+
+        // parents can be a mixture of ImmutablePaths and collapsed
         // cloned ImmutablePaths that are a result of branching
         List<Object> parents = new ArrayList<>();
         ImmutablePath previous = null;
         parents.add(parent);
         while(!(child.previousPath instanceof TailPath)) {
-            List<Set<String>> childLabels = child.labels();
-            // found labels
-            List<String> foundLabels = new ArrayList<>();
-            for(Set<String> l : childLabels) {
-                if(!Collections.disjoint(l, labels)) {
-                    for(String ll : labels) {
-                        if(l.contains(ll)) {
-                            foundLabels.add(ll);
-                        }
-                    }
-                }
-            }
-            if(foundLabels.isEmpty()) {
-               continue;
+            if(!Collections.disjoint(child.currentLabels, labels)) {
+//                child.currentLabels.removeAll(labels);
+            } else {
+                child = (ImmutablePath)child.previousPath;
+                continue;
             }
             // split path
             // clone child
             ImmutablePath clone = cloneImmutablePath(child);
+            clone.currentLabels.removeAll(labels);
 
             // walk back up and build parent clones or reuse
             // other previously cloned paths
-            for(int i = parents.size() - 1; i  >= 0; i--) {
-                final Object o = parents.get(i);
-                if(o instanceof ImmutablePath) {
-                    ImmutablePath p = (ImmutablePath)o;
-                    final ImmutablePath clonedP = cloneImmutablePath(p);
-                    if (previous == null) {
-                        clonedP.previousPath = clone;
+            if(parents.size() > 0) {
+                boolean first = true;
+                for(int i = parents.size() - 1; i  >= 0; i--) {
+                    final Object o = parents.get(i);
+                    if (o instanceof ImmutablePath) {
+                        ImmutablePath p = (ImmutablePath) o;
+                        final ImmutablePath clonedP = cloneImmutablePath(p);
+                        if (previous == null) {
+                            clonedP.previousPath = clone;
+                        } else {
+                            clonedP.previousPath = previous;
+                        }
+                        if(first) {
+                            head = clonedP;
+                        }
+                        previous = clonedP;
                     } else {
-                        clonedP.previousPath = previous;
+                        previous = ((ImmutablePath) o);
                     }
-                    previous = clonedP;
-                } else {
-                    previous = ((ImmutablePath)o);
+//                    if(first) {
+//
+//                        first = false;
+//                    }
                 }
+                parents = new ArrayList<>();
+                parents.add(clone);
             }
 
-            parent = child;
+            parents.add(clone);
             child = (ImmutablePath)child.previousPath;
         }
 
-        return previous;
+        return head;
     }
 
     private static ImmutablePath cloneImmutablePath(final ImmutablePath path) {
         return new ImmutablePath(path.previousPath, path.currentObject, new HashSet<>(path.currentLabels));
     }
-
-//    @Override
-//    public Path retract(final Set<String> labels) {
-//        if(!Collections.disjoint(this.currentLabels, labels)) {
-//            // clone and split
-//            final ImmutablePath clonedPath = new ImmutablePath(this.previousPath,
-//                    this.currentObject, new LinkedHashSet<>(this.currentLabels));
-//            int dropCount = 0;
-//            for(final String label : labels) {
-//                clonedPath.currentLabels.remove(label);
-//                dropCount++;
-//            }
-//            if(clonedPath.currentLabels.size() == 0) {
-//                // straight up drop it
-//                clonedPath.currentObject = null;
-//            }
-//            if(dropCount == labels.size()) {
-//                return clonedPath;
-//            } else {
-//                //keep on going down the line
-//                return retract(clonedPath, labels);
-//            }
-//        } else {
-//            List<ImmutablePath> crumbs = new ArrayList<>();
-//            ImmutablePathImpl p = this;
-//            while(!(p instanceof TailPath)) {
-//                p = ((ImmutablePath)p).previousPath;
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private Path retract(final ImmutablePath parentPath, final Set<String> labels) {
-//        final ImmutablePath childPath = (ImmutablePath)parentPath.previousPath;
-//        if (Collections.disjoint(childPath.currentLabels, labels)) {
-//            return retract((ImmutablePath)childPath.previousPath, labels);
-//        } else {
-//            // clone and split
-//            final ImmutablePath clonedPath = new ImmutablePath(childPath,
-//                    this.currentObject, new LinkedHashSet<>(this.currentLabels));
-//            int dropCount = 0;
-//            for(final String label : labels) {
-//                clonedPath.currentLabels.remove(label);
-//                dropCount++;
-//            }
-//            if(clonedPath.currentLabels.size() == 0) {
-//                // straight up drop it
-//                clonedPath.currentObject = null;
-//            }
-//        }
-//        return null;
-//    }
-
-//    public ImmutablePath getPrevious() {
-//        return (ImmutablePath)this.previousPath;
-//    }
 
     @Override
     public <A> A get(final int index) {

@@ -83,8 +83,7 @@ public class LP_O_OB_P_S_SE_SL_Traverser<T> extends O_OB_S_SE_SL_Traverser<T> {
     @Override
     public void dropLabels(final Set<String> labels) {
         if (!labels.isEmpty()) {
-            // todo figure out how to drop labels
-            this.path.labels();
+            this.path.retract(labels);
         }
     }
 
