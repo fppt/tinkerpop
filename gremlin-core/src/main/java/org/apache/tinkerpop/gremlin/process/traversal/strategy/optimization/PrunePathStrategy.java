@@ -28,6 +28,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.step.filter.WherePredicate
 import org.apache.tinkerpop.gremlin.process.traversal.step.sideEffect.PrunePathStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.EmptyStep;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.AbstractTraversalStrategy;
+import org.apache.tinkerpop.gremlin.process.traversal.util.FastNoSuchElementException;
 import org.apache.tinkerpop.gremlin.process.traversal.util.TraversalHelper;
 
 import java.util.ArrayList;
@@ -63,16 +64,18 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
     @Override
     public void apply(final Traversal.Admin<?, ?> traversal) {
         final Map<String, Integer> labelRefCount = new HashMap<>();
-        final Map<Step, List<String>> labelMaxStepMap = new HashMap<>();
+//        final Map<Step, List<String>> labelMaxStepMap = new HashMap<>();
+        final Map<String, Integer> labelMaxStepMap = new HashMap<>();
         // gather labels and there max step mention
         // note max lamba step.  If one exists, nothing can be pruned until after that point
         // because we cannot introspect into the lambda and see if there was a label reference.
         Step lastLambdaStep = null;
+        int stepCount = 0;
         for (final Step<?, ?> step : traversal.asAdmin().getSteps()) {
             if(step instanceof LambdaHolder) {
                 lastLambdaStep = step;
             }
-            labelMaxStepMap.put(step, new ArrayList<>());
+//            labelMaxStepMap.put(step, new ArrayList<>());
             final Set<String> labels = step.getLabels();
             for(final String label : labels) {
                 if(labelRefCount.get(label) == null) {
@@ -88,7 +91,10 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
                         labelRefCount.put(key, labelRefCount.get(key) - 1);
                     }
                 }
-                labelMaxStepMap.get(step).addAll(scopeKeys);
+//                labelMaxStepMap.get(step).addAll(scopeKeys);
+                final int sCount = stepCount;
+                scopeKeys.stream().forEach(key -> labelMaxStepMap.put(key, sCount));
+                stepCount++;
             }
         }
 
@@ -102,15 +108,43 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
             }
         }
 
-        // insert prunePathStep after max step
-        for (final Map.Entry<Step, List<String>> entry : labelMaxStepMap.entrySet()) {
-            List<String> labels = entry.getValue();
-            if (!labels.isEmpty()) {
-                Step step = entry.getKey();
-                if(! (step.getNextStep() instanceof EmptyStep)) {
-                    TraversalHelper.insertAfterStep(new PrunePathStep<>(traversal, labels.toArray(new String[labels.size()])), step, traversal.asAdmin());
+        // go through backwards
+        Step currentStep = traversal.asAdmin().getEndStep();
+        Set<String> foundLabels = new HashSet<>();
+        try {
+            while (true) {
+                Set<String> labels = currentStep.getLabels();
+                Set<String> dropThese = new HashSet<>();
+                for(final String label : labels) {
+                    if(!foundLabels.contains(label)) {
+                        dropThese.add(label);
+                        foundLabels.add(label);
+                    }
                 }
+                if(!dropThese.isEmpty()) {
+                    TraversalHelper.insertAfterStep(
+                            new PrunePathStep<>(traversal, true, dropThese.toArray(new String[dropThese.size()])), currentStep, traversal.asAdmin());
+                }
+                currentStep = currentStep.getPreviousStep();
             }
+        } catch (FastNoSuchElementException e) {
+
         }
+
+
+
+        // insert prunePathStep after max step
+//        for (final Map.Entry<String, Integer> entry : labelMaxStepMap.entrySet()) {
+////            List<String> labels = entry.getValue();
+////            if (!labels.isEmpty()) {
+//                Step step = entry.getKey();
+//                if(! (step.getNextStep() instanceof EmptyStep)) {
+//                    // if there aren't any labels to drop after this, go ahead and
+//                    // drop the full path and skip the labels
+//                    boolean dropPath = true;
+//                    TraversalHelper.insertAfterStep(new PrunePathStep<>(traversal, dropPath, labels.toArray(new String[labels.size()])), step, traversal.asAdmin());
+//                }
+//            }
+//        }
     }
 }

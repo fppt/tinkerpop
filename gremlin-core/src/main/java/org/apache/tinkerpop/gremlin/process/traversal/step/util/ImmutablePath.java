@@ -83,6 +83,27 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
     public Path retract(final Set<String> labels) {
         ImmutablePath parent;
         ImmutablePath child;
+
+        // first see if the labels in the set are even present in this path
+        boolean found = false;
+        for(final Set<String> labelSet : labels()) {
+            if(!Collections.disjoint(labelSet, labels)) {
+                found = true;
+                break;
+            }
+        }
+
+        if(!found) {
+            // nothing to do here...
+            return this;
+        }
+
+        if(this.previousPath instanceof TailPath) {
+            ImmutablePath clone = cloneImmutablePath(this);
+            clone.previousPath = TailPath.instance();
+            return clone;
+        }
+
         if(this.previousPath != null) {
             parent = this;
             child = (ImmutablePath)this.previousPath;
@@ -105,10 +126,14 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
         List<Object> parents = new ArrayList<>();
         ImmutablePath previous = null;
         parents.add(parent);
-        while(!(child.previousPath instanceof TailPath)) {
+        Set<String> foundLabels = new HashSet<>();
+
+        while(true) {
+
             if(!Collections.disjoint(child.currentLabels, labels)) {
 //                child.currentLabels.removeAll(labels);
             } else {
+                parents.add(child);
                 child = (ImmutablePath)child.previousPath;
                 continue;
             }
@@ -117,38 +142,72 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
             ImmutablePath clone = cloneImmutablePath(child);
             clone.currentLabels.removeAll(labels);
 
+
             // walk back up and build parent clones or reuse
             // other previously cloned paths
+            boolean headFound = false;
             if(parents.size() > 0) {
                 boolean first = true;
-                for(int i = parents.size() - 1; i  >= 0; i--) {
-                    final Object o = parents.get(i);
-                    if (o instanceof ImmutablePath) {
-                        ImmutablePath p = (ImmutablePath) o;
-                        final ImmutablePath clonedP = cloneImmutablePath(p);
-                        if (previous == null) {
-                            clonedP.previousPath = clone;
-                        } else {
-                            clonedP.previousPath = previous;
-                        }
-                        if(first) {
-                            head = clonedP;
-                        }
-                        previous = clonedP;
-                    } else {
-                        previous = ((ImmutablePath) o);
-                    }
+                // construct parents up to this point
+                ImmutablePath newPath = cloneImmutablePath((ImmutablePath)parents.get(0));
+                // replace the previous
+                ImmutablePath prevPath = newPath;
+                ImmutablePath lastPath = prevPath;
+                if(!headFound) {
+                    head = newPath;
+                }
+                for(int i = 1; i < parents.size(); i++) {
+                    ImmutablePath clonedPrev = cloneImmutablePath((ImmutablePath) parents.get(i));
+                    prevPath.previousPath = clonedPrev;
+                    lastPath = clonedPrev;
+                    prevPath = clonedPrev;
+                }
+
+//                if(previous == null) {
+                    lastPath.previousPath = clone;
+                    // hack!
+//                    break;
+//                }
+
+                parents = new ArrayList<>();
+                headFound = true;
+                parents.add(lastPath);
+
+                if(child.previousPath instanceof TailPath) {
+                    // nothing to see...we're done here
+                    break;
+                }
+
+                child = (ImmutablePath)child.previousPath;
+
+//                for(int i = parents.size() - 1; i  >= 0; i--) {
+//                    final Object o = parents.get(i);
+//                    if (o instanceof ImmutablePath) {
+//                        ImmutablePath p = (ImmutablePath) o;
+//                        final ImmutablePath clonedP = cloneImmutablePath(p);
+//                        if (previous == null) {
+//                            clonedP.previousPath = clone;
+//                        } else {
+//                            clonedP.previousPath = previous;
+//                        }
+//                        if(first) {
+//                            head = clonedP;
+//                        }
+//                        previous = clonedP;
+//                    } else {
+//                        previous = ((ImmutablePath) o);
+//                    }
 //                    if(first) {
 //
 //                        first = false;
 //                    }
                 }
-                parents = new ArrayList<>();
-                parents.add(clone);
-            }
+//                parents = new ArrayList<>();
+//                parents.add(clone);
 
-            parents.add(clone);
-            child = (ImmutablePath)child.previousPath;
+
+//            parents.add(clone);
+//            child = (ImmutablePath)child.previousPath;
         }
 
         return head;

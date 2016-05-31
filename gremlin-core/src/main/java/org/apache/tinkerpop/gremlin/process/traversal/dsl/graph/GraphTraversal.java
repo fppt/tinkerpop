@@ -1004,8 +1004,8 @@ public interface GraphTraversal<S, E> extends Traversal<S, E> {
         return this.asAdmin().addStep(new GroupSideEffectStep<>(this.asAdmin(), sideEffectKey));
     }
 
-    public default GraphTraversal<S, E> prunePath(final String... labels) {
-        return this.asAdmin().addStep(new PrunePathStep<>(this.asAdmin(), labels));
+    public default GraphTraversal<S, E> prunePath(final Boolean dropPath, final String... labels) {
+        return this.asAdmin().addStep(new PrunePathStep<>(this.asAdmin(), dropPath, labels));
     }
 
     /**

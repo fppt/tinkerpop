@@ -85,6 +85,18 @@ public class B_LP_O_S_SE_SL_Traverser<T> extends B_O_S_SE_SL_Traverser<T> {
     }
 
     @Override
+    public void dropLabels(final Set<String> labels) {
+        if (!labels.isEmpty()) {
+            this.path.retract(labels);
+        }
+    }
+
+    @Override
+    public void dropPath() {
+        this.path = ImmutablePath.make();
+    }
+
+    @Override
     public int hashCode() {
         return super.hashCode() + this.path.hashCode();
     }

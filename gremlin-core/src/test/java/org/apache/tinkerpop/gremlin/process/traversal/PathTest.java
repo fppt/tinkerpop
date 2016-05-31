@@ -78,13 +78,15 @@ public class PathTest {
             assertEquals(Integer.valueOf(2), path.get(1));
             assertEquals(Integer.valueOf(3), path.get(2));
             assertEquals(Integer.valueOf(3), path.get(3));
-            path = path.retract(Collections.singleton("e"));
-            assertFalse(path.hasLabel("e"));
+            Path retractedPath = path.retract(Collections.singleton("f"));
+            assertFalse(path.hasLabel("f"));
+            assertEquals(retractedPath, path);
             path = path.retract(Collections.singleton("b"));
             assertFalse(path.hasLabel("b"));
             path = path.retract(Collections.singleton("a"));
             assertFalse(path.hasLabel("a"));
             assertTrue(path.hasLabel("d"));
+            path.retract(new HashSet<>(Arrays.asList("c", "d")));
         });
     }
 

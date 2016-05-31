@@ -32,19 +32,19 @@ import java.util.Set;
 public final class PrunePathStep<S> extends SideEffectStep<S> {
 
     final Set<String> dropLabels;
-    final boolean dropPath;
+    final Boolean dropPath;
 
-    public PrunePathStep(final Traversal.Admin traversal, final String... dropLabels) {
+    public PrunePathStep(final Traversal.Admin traversal, final Boolean dropPath, final String... dropLabels) {
         super(traversal);
         this.dropLabels = new HashSet<>(Arrays.asList(dropLabels));
-        this.dropPath = false;
+        this.dropPath = dropPath;
     }
 
     @Override
     protected void sideEffect(Traverser.Admin<S> traverser) {
-        final Traverser<S> start = this.starts.next();
-        if(this.dropPath) start.asAdmin().dropPath();
-        else start.asAdmin().dropLabels(labels);
+//        final Traverser<S> start = this.starts.next();
+        if(this.dropPath) traverser.asAdmin().dropPath();
+        else traverser.asAdmin().dropLabels(dropLabels);
     }
 
     @Override

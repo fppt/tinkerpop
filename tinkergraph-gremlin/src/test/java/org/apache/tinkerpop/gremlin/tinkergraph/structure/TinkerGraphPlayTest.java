@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static org.apache.tinkerpop.gremlin.process.traversal.P.neq;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.as;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.both;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.choose;
@@ -270,7 +271,7 @@ public class TinkerGraphPlayTest {
                         as("a").in("writtenBy").as("b"),
                         as("b").out("followedBy").as("c"),
                         as("c").out("writtenBy").as("d"),
-                        as("d").where(P.neq("a"))).select("a", "b", "c", "d").by("name");
+                        as("d").where(neq("a"))).select("a", "b", "c", "d").by("name");
 
 
         logger.info(traversal.get().toString());
@@ -318,8 +319,22 @@ public class TinkerGraphPlayTest {
         c.addEdge("knows", d);
         d.addEdge("knows", e);
 
-        a.addEdge("knows", b, "a", 1);
+//        a.addEdge("knows", b, "a", 1);
 
-        g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
+//        g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
+
+//        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").explain());
+        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").toList());
+//        System.out.println(g.V(a).out("knows").as("a").out("knows").out("knows").toList());
+        System.out.println(g.V(0L).out().as("a").out().where(neq("a")).out().barrier().profile().next());
+    }
+
+    @Test
+    public void testBugs() {
+        GraphTraversalSource g = TinkerFactory.createModern().traversal();
+
+        System.out.println(g.V().as("a").both().as("b").dedup("a", "b").by(T.label).select("a", "b").explain());
+        System.out.println(g.V().as("a").both().as("b").dedup("a", "b").by(T.label).select("a", "b").toList());
+
     }
 }
