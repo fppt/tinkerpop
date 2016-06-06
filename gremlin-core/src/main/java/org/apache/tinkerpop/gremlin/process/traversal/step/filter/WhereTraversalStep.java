@@ -88,6 +88,11 @@ public final class WhereTraversalStep<S> extends FilterStep<S> implements Traver
                 ElementRequirement.ID;
     }
 
+    @Override
+    public void setKeepLabels(Set<String> labels) {
+
+    }
+
 
     @Override
     protected boolean filter(final Traverser.Admin<S> traverser) {

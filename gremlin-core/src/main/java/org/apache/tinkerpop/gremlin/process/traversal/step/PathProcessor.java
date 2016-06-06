@@ -60,13 +60,13 @@ public interface PathProcessor {
         return max;
     }
 
-    void setDropLabels(final Set<String> labels);
+    void setKeepLabels(final Set<String> labels);
 
-    static void dropLabels(final Traverser traverser, final Set<String> labels) {
-        if(labels.isEmpty()) {
+    static void keepLabels(final Traverser traverser, final Set<String> labels) {
+        if(labels == null || labels.isEmpty()) {
             traverser.asAdmin().dropPath();
         } else {
-            traverser.asAdmin().dropLabels(labels);
+            traverser.asAdmin().keepLabels(labels);
         }
     }
 }

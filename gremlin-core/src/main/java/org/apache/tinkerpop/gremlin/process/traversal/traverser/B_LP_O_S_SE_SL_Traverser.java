@@ -25,6 +25,8 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.ImmutablePath;
 import org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceFactory;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -85,9 +87,20 @@ public class B_LP_O_S_SE_SL_Traverser<T> extends B_O_S_SE_SL_Traverser<T> {
     }
 
     @Override
-    public void dropLabels(final Set<String> labels) {
+    public void keepLabels(final Set<String> labels) {
         if (!labels.isEmpty()) {
-            this.path.retract(labels);
+            Set<String> retractLabels = new HashSet<>();
+            List<Set<String>> existingLabels = this.path.labels();
+            for(Set<String> labelSet : existingLabels) {
+                for(String l : labelSet) {
+                    if(labels.contains(l) == false) { retractLabels.add(l); };
+                }
+            }
+            try {
+                this.path = this.path.retract(retractLabels);
+            } catch (Exception e) {
+                // todo don't retract if it's a head path
+            }
         }
     }
 

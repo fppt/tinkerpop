@@ -111,6 +111,11 @@ public final class TreeStep<S> extends ReducingBarrierStep<S, Tree> implements T
         this.traversalRing.reset();
     }
 
+    @Override
+    public void setKeepLabels(Set<String> labels) {
+
+    }
+
     ///////////
 
     public static final class TreeBiOperator implements BinaryOperator<Tree>, Serializable {

@@ -61,6 +61,7 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
 
     private Set<List<Object>> dedups = null;
     private Set<String> dedupLabels = null;
+    private Set<String> keepLabels = null;
 
     public MatchStep(final Traversal.Admin traversal, final ConnectiveStep.Connective connective, final Traversal... matchTraversals) {
         super(traversal);
@@ -383,6 +384,13 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
         return this.getSelfAndChildRequirements(TraverserRequirement.LABELED_PATH, TraverserRequirement.SIDE_EFFECTS);
     }
 
+    @Override
+    protected Traverser.Admin<Map<String, E>> processNextStart() throws NoSuchElementException {
+        final Traverser.Admin<Map<String, E>> traverser = super.processNextStart();
+        PathProcessor.keepLabels(traverser, keepLabels);
+        return traverser;
+    }
+
     //////////////////////////////
 
     public static class MatchStartStep extends AbstractStep<Object, Object> implements Scoping {
@@ -678,5 +686,10 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
                 this.multiplicity = (double) ++this.endsCount / (double) this.startsCount;
             }
         }
+    }
+
+    @Override
+    public void setKeepLabels(Set<String> labels) {
+        this.keepLabels = labels;
     }
 }

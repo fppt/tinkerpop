@@ -115,4 +115,9 @@ public final class TreeSideEffectStep<S> extends SideEffectStep<S> implements Si
     public Set<TraverserRequirement> getRequirements() {
         return this.getSelfAndChildRequirements(TraverserRequirement.PATH, TraverserRequirement.SIDE_EFFECTS);
     }
+
+    @Override
+    public void setKeepLabels(Set<String> labels) {
+
+    }
 }

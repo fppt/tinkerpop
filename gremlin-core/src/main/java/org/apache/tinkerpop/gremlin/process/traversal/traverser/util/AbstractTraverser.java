@@ -78,7 +78,7 @@ public abstract class AbstractTraverser<T> implements Traverser<T>, Traverser.Ad
     }
 
     @Override
-    public void dropLabels(final Set<String> labels) {
+    public void keepLabels(final Set<String> labels) {
 
     }
 

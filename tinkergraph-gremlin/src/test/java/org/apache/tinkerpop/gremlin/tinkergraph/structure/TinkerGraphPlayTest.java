@@ -50,12 +50,14 @@ import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.count;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.fold;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.has;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.in;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.or;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.out;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.outE;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.select;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.union;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.valueMap;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.values;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.where;
 
 /**
  * @author Stephen Mallette (http://stephen.genoprime.com)
@@ -301,8 +303,8 @@ public class TinkerGraphPlayTest {
 
     @Test
     public void testPaths() {
-        final Graph graph = TinkerGraph.open();
-        final GraphTraversalSource g = graph.traversal();
+        Graph graph = TinkerGraph.open();
+        GraphTraversalSource g = graph.traversal();
 
         //     (b)
         // (a)      (d)  (e)
@@ -319,14 +321,29 @@ public class TinkerGraphPlayTest {
         c.addEdge("knows", d);
         d.addEdge("knows", e);
 
+        graph = TinkerFactory.createModern();
+        g = graph.traversal();
+
 //        a.addEdge("knows", b, "a", 1);
 
 //        g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
 
-//        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").explain());
-        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").toList());
+//        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").barrier().profile().next());
+//        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").toList());
 //        System.out.println(g.V(a).out("knows").as("a").out("knows").out("knows").toList());
-        System.out.println(g.V(0L).out().as("a").out().where(neq("a")).out().barrier().profile().next());
+//        System.out.println(g.V(a).out().as("a").out().out().select("a", "b").barrier().profile().next());
+
+//        System.out.println(g.V().as("a").match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("a", "b", "c").profile().next());
+        System.out.println(g.V().match(
+                where("a", P.neq("c")),
+                as("a").out("created").as("b"),
+                or(
+                        as("a").out("knows").has("name", "vadas"),
+                        as("a").in("knows").and().as("a").has(T.label, "person")
+                ),
+                as("b").in("created").as("c"),
+                as("b").in("created").count().is(P.gt(1)))
+                .select("a", "b", "c").by(T.id).profile().next());
     }
 
     @Test

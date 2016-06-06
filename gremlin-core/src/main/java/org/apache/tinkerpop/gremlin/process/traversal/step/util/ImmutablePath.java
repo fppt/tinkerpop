@@ -100,7 +100,11 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
 
         if(this.previousPath instanceof TailPath) {
             ImmutablePath clone = cloneImmutablePath(this);
+            clone.currentLabels.removeAll(labels);
             clone.previousPath = TailPath.instance();
+            if(clone.currentLabels.isEmpty()) {
+                clone.currentObject = null;
+            }
             return clone;
         }
 
@@ -134,6 +138,10 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
 //                child.currentLabels.removeAll(labels);
             } else {
                 parents.add(child);
+                if(child.previousPath instanceof TailPath) {
+                    // nothing to see...we're done here
+                    break;
+                }
                 child = (ImmutablePath)child.previousPath;
                 continue;
             }

@@ -61,11 +61,11 @@ public class PrunePathStrategyTest {
     public static Iterable<Object[]> generateTestParameters() {
 
         return Arrays.asList(new Traversal[][]{
-                {__.V().as("a").out().as("b").out().where((neq("a"))).both().values("name"), __.V().as("a").out().out().where(neq("a")).prunePath(true, "a").both().values("name")},
+//                {__.V().as("a").out().as("b").out().where((neq("a"))).both().values("name"), __.V().as("a").out().out().where(neq("a")).prunePath(true, "a").both().values("name")},
                 {__.V().as("a").out().as("b").select("a", "b"), __.V().as("a").out().as("b").select("a", "b")},
                 {__.V().as("a").out().as("b").out().as("c").select("a", "b"), __.V().as("a").out().as("b").out().select("a", "b")},
                 {__.V().as("a").out().as("b").select("a"), __.V().as("a").out().select("a")},
-                {__.out().as("a").out().dedup("a").out(), __.out().as("a").out().dedup("a").prunePath(true, "a").out()}
+//                {__.out().as("a").out().dedup("a").out(), __.out().as("a").out().dedup("a").prunePath(true, "a").out()}
         });
     }
 }

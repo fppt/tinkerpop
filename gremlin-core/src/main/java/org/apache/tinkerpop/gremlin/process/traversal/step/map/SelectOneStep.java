@@ -42,6 +42,7 @@ public final class SelectOneStep<S, E> extends MapStep<S, E> implements Traversa
     private final Pop pop;
     private final String selectKey;
     private Traversal.Admin<S, E> selectTraversal = null;
+    private Set<String> keepLabels;
 
     public SelectOneStep(final Traversal.Admin traversal, Pop pop, final String selectKey) {
         super(traversal);
@@ -114,6 +115,20 @@ public final class SelectOneStep<S, E> extends MapStep<S, E> implements Traversa
 
     public Pop getPop() {
         return this.pop;
+    }
+
+    @Override
+    public void setKeepLabels(Set<String> labels) {
+        this.keepLabels = labels;
+    }
+
+    @Override
+    protected Traverser.Admin<E> processNextStart() {
+        final Traverser.Admin<E> traverser = super.processNextStart();
+        if(keepLabels != null && keepLabels.size() > 0) {
+            PathProcessor.keepLabels(traverser, keepLabels);
+        }
+        return traverser;
     }
 }
 

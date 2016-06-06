@@ -31,12 +31,12 @@ import java.util.Set;
  */
 public final class PrunePathStep<S> extends SideEffectStep<S> {
 
-    final Set<String> dropLabels;
+    final Set<String> keepLabels;
     final Boolean dropPath;
 
-    public PrunePathStep(final Traversal.Admin traversal, final Boolean dropPath, final String... dropLabels) {
+    public PrunePathStep(final Traversal.Admin traversal, final Boolean dropPath, final String... keepLabels) {
         super(traversal);
-        this.dropLabels = new HashSet<>(Arrays.asList(dropLabels));
+        this.keepLabels = new HashSet<>(Arrays.asList(keepLabels));
         this.dropPath = dropPath;
     }
 
@@ -44,12 +44,12 @@ public final class PrunePathStep<S> extends SideEffectStep<S> {
     protected void sideEffect(Traverser.Admin<S> traverser) {
 //        final Traverser<S> start = this.starts.next();
         if(this.dropPath) traverser.asAdmin().dropPath();
-        else traverser.asAdmin().dropLabels(dropLabels);
+        else traverser.asAdmin().keepLabels(keepLabels);
     }
 
     @Override
     public String toString() {
-        return StringFactory.stepString(this, this.dropLabels);
+        return StringFactory.stepString(this, this.keepLabels);
     }
 }
 
