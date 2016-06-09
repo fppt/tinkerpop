@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 public final class TreeStep<S> extends ReducingBarrierStep<S, Tree> implements TraversalParent, ByModulating, PathProcessor {
 
     private TraversalRing<Object, Object> traversalRing = new TraversalRing<>();
+    private Set<String> keepLabels;
 
     public TreeStep(final Traversal.Admin traversal) {
         super(traversal);
@@ -113,8 +114,11 @@ public final class TreeStep<S> extends ReducingBarrierStep<S, Tree> implements T
 
     @Override
     public void setKeepLabels(Set<String> labels) {
-
+        this.keepLabels = labels;
     }
+
+    @Override
+    public Set<String> getKeepLabels() { return this.keepLabels; }
 
     ///////////
 

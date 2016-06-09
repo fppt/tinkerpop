@@ -121,14 +121,22 @@ public final class WherePredicateStep<S> extends FilterStep<S> implements Scopin
     @Override
     protected Traverser.Admin<S> processNextStart() {
         final Traverser.Admin<S> traverser = super.processNextStart();
-
-        PathProcessor.keepLabels(traverser, keepLabels);
-
+        // add traverser tags in
+        Set<String> labels = new HashSet<>();
+        labels.addAll(traverser.getTags());
+        if(keepLabels != null ) labels.addAll(keepLabels);
+        if(keepLabels != null) System.out.println(labels);
+        PathProcessor.keepLabels(traverser, labels);
         return traverser;
     }
 
     @Override
     public void setKeepLabels(Set<String> labels) {
         this.keepLabels = labels;
+    }
+
+    @Override
+    public Set<String> getKeepLabels() {
+        return this.keepLabels;
     }
 }

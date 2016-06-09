@@ -93,7 +93,7 @@ public class MutablePath implements Path, Serializable {
                 if (this.labels().get(i).contains(label)) {
                     this.labels.get(i).remove(label);
                     if (this.labels.get(i).size() == 0) {
-                        this.objects.remove(i);
+                        for(int x = 0; x < this.objects.size(); x++) this.objects.remove(0);
                         continue;
                     }
                 }

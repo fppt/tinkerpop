@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.P.neq;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.and;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.as;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.both;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.choose;
@@ -322,18 +323,33 @@ public class TinkerGraphPlayTest {
         d.addEdge("knows", e);
 
         graph = TinkerFactory.createModern();
-        g = graph.traversal();
+        g = graph.traversal();//.withComputer();
 
 //        a.addEdge("knows", b, "a", 1);
 
 //        g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
 
-//        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").barrier().profile().next());
+        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").barrier().profile().next());
 //        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").toList());
 //        System.out.println(g.V(a).out("knows").as("a").out("knows").out("knows").toList());
 //        System.out.println(g.V(a).out().as("a").out().out().select("a", "b").barrier().profile().next());
 
-//        System.out.println(g.V().as("a").match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("a", "b", "c").profile().next());
+//        System.out.println(g.V().as("a").match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("a", "b", "c").toList());
+
+//        System.out.println(g.V().match(
+//                as("a").out("knows").as("b"),
+//                as("b").out("created").has("name", "lop"),
+//                as("b").match(
+//                        as("b").out("created").as("d"),
+//                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
+//        System.out.println(g.V().match(
+//                as("a").out("knows").as("b"),
+//                as("b").out("created").has("name", "lop"),
+//                as("b").match(
+//                        as("b").out("created").as("d"),
+//                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
+//        System.out.println(g.V().aggregate("x").as("a").select("x").unfold().addE("existsWith").to("a").property("time", "now").toList());
+
         System.out.println(g.V().match(
                 where("a", P.neq("c")),
                 as("a").out("created").as("b"),
@@ -343,7 +359,7 @@ public class TinkerGraphPlayTest {
                 ),
                 as("b").in("created").as("c"),
                 as("b").in("created").count().is(P.gt(1)))
-                .select("a", "b", "c").by(T.id).profile().next());
+                .select("a", "b", "c").by(T.id).toList());
     }
 
     @Test

@@ -148,6 +148,8 @@ public final class SelectStep<S, E> extends MapStep<S, Map<String, E>> implement
         this.keepLabels = labels;
     }
 
+    @Override
+    public Set<String> getKeepLabels() { return this.keepLabels; }
 
     @Override
     protected Traverser.Admin<Map<String, E>> processNextStart() {

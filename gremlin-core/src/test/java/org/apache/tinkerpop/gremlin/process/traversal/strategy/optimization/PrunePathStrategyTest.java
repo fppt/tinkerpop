@@ -21,6 +21,7 @@ package org.apache.tinkerpop.gremlin.process.traversal.strategy.optimization;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategies;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
+import org.apache.tinkerpop.gremlin.process.traversal.step.PathProcessor;
 import org.apache.tinkerpop.gremlin.process.traversal.util.DefaultTraversalStrategies;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +32,7 @@ import java.util.function.Function;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.P.neq;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Ted Wilmes (http://twilmes.org)
@@ -55,16 +57,19 @@ public class PrunePathStrategyTest {
     public void doTest() {
         applyPrunePathStrategy(original);
         assertEquals(optimized, original);
+        assertNull(((PathProcessor)optimized.asAdmin().getEndStep()).getKeepLabels());
     }
 
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<Object[]> generateTestParameters() {
 
         return Arrays.asList(new Traversal[][]{
+//                {__.V().as("a").out().where(neq("a")), __.V().as("a").out().where(neq("a"))},
+                {__.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b"), __.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b")}
 //                {__.V().as("a").out().as("b").out().where((neq("a"))).both().values("name"), __.V().as("a").out().out().where(neq("a")).prunePath(true, "a").both().values("name")},
-                {__.V().as("a").out().as("b").select("a", "b"), __.V().as("a").out().as("b").select("a", "b")},
-                {__.V().as("a").out().as("b").out().as("c").select("a", "b"), __.V().as("a").out().as("b").out().select("a", "b")},
-                {__.V().as("a").out().as("b").select("a"), __.V().as("a").out().select("a")},
+//                {__.V().as("a").out().as("b").select("a", "b"), __.V().as("a").out().as("b").select("a", "b")},
+//                {__.V().as("a").out().as("b").out().as("c").select("a", "b"), __.V().as("a").out().as("b").out().select("a", "b")},
+//                {__.V().as("a").out().as("b").select("a"), __.V().as("a").out().select("a")},
 //                {__.out().as("a").out().dedup("a").out(), __.out().as("a").out().dedup("a").prunePath(true, "a").out()}
         });
     }

@@ -18,12 +18,18 @@
  */
 package org.apache.tinkerpop.gremlin.process.traversal.strategy.optimization;
 
+import org.apache.tinkerpop.gremlin.process.computer.traversal.step.map.TraversalVertexProgramStep;
+import org.apache.tinkerpop.gremlin.process.traversal.Parameterizing;
+import org.apache.tinkerpop.gremlin.process.traversal.Path;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.step.PathProcessor;
 import org.apache.tinkerpop.gremlin.process.traversal.step.Scoping;
+import org.apache.tinkerpop.gremlin.process.traversal.step.TraversalParent;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.MatchStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.EmptyStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.util.Parameters;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.AbstractTraversalStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.util.FastNoSuchElementException;
 
@@ -37,6 +43,11 @@ import java.util.Set;
 public final class PrunePathStrategy extends AbstractTraversalStrategy<TraversalStrategy.OptimizationStrategy> implements TraversalStrategy.OptimizationStrategy {
 
     private static final PrunePathStrategy INSTANCE = new PrunePathStrategy();
+    private static final Set<Class<? extends OptimizationStrategy>> PRIORS = new HashSet<>();
+
+    static {
+        PRIORS.add(PathProcessorStrategy.class);
+    }
 
     private PrunePathStrategy() {
     }
@@ -47,76 +58,73 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
 
     @Override
     public void apply(final Traversal.Admin<?, ?> traversal) {
-
-        if(!traversal.getParent().equals(EmptyStep.instance())) {
-            // start with parents keep labels
-            if(parent instanceof PathProcessor) {
-                (())
-            }
-        }
+        TraversalParent parent = traversal.getParent();
 
         Set<String> foundLabels = new HashSet<>();
-        final List<Step> steps = traversal.getSteps();
-        
-        try {
-            Set<String> keepLabels = new HashSet<>();
-            for(int i = steps.size() - 1; i >= 0; i--) {
-                Step currentStep = steps.get(i);
-                if(currentStep instanceof Scoping) {
-                    Set<String> labels = ((Scoping) currentStep).getScopeKeys();
-                    for(final String label : labels) {
-                        if(foundLabels.contains(label)) {
-                            keepLabels.add(label);
-                        } else {
-                            // it'll get added later, b/c we can drop after this step
-                            foundLabels.add(label);
-                        }
-                    }
-                    if(currentStep instanceof PathProcessor) {
-                        ((PathProcessor) currentStep).setKeepLabels(keepLabels);
-                    }
-                    keepLabels.addAll(foundLabels);
-                }
-//                Step currentStep = steps.get(i);
-//                Set<String> labels = new HashSet<>();
-//                labels.addAll(currentStep.getLabels());
-//                if(currentStep instanceof Scoping) {
-//                    labels.addAll(((Scoping) currentStep).getScopeKeys());
-//                }
-//                Set<String> dropThese = new HashSet<>();
-//                for(final String label : labels) {
-//                    if(!foundLabels.contains(label)) {
-//                        dropThese.add(label);
-//                        foundLabels.add(label);
-//                    }
-//                }
-//
-//                if(!dropThese.isEmpty()) {
-////                    TraversalHelper.insertAfterStep(
-////                            new PrunePathStep<>(traversal, true, dropThese.toArray(new String[dropThese.size()])), currentStep, traversal.asAdmin());
-//                    if(currentStep instanceof PathProcessor) {
-//                        ((PathProcessor) currentStep).setKeepLabels(dropThese);
-//                    }
-//                }
-            }
-        } catch (FastNoSuchElementException e) {
+        Set<String> keepLabels = new HashSet<>();
 
+        // If this traversal has a parent, it will need to inherit its
+        // parent's keep labels.
+        if(!parent.equals(EmptyStep.instance())) {
+            // start with parents keep labels
+            if(parent instanceof PathProcessor) {
+                PathProcessor parentPathProcess = (PathProcessor) parent;
+                if(parentPathProcess.getKeepLabels() != null) keepLabels.addAll(parentPathProcess.getKeepLabels());
+            }
         }
 
 
+        final List<Step> steps = traversal.getSteps();
+        for(int i = steps.size() - 1; i >= 0; i--) {
+            // maintain our list of labels to keep, repeatedly adding labels that were found during
+            // the last iteration
+            keepLabels.addAll(foundLabels);
+            Step currentStep = steps.get(i);
 
-        // insert prunePathStep after max step
-//        for (final Map.Entry<String, Integer> entry : labelMaxStepMap.entrySet()) {
-////            List<String> labels = entry.getValue();
-////            if (!labels.isEmpty()) {
-//                Step step = entry.getKey();
-//                if(! (step.getNextStep() instanceof EmptyStep)) {
-//                    // if there aren't any labels to drop after this, go ahead and
-//                    // drop the full path and skip the labels
-//                    boolean dropPath = true;
-//                    TraversalHelper.insertAfterStep(new PrunePathStep<>(traversal, dropPath, labels.toArray(new String[labels.size()])), step, traversal.asAdmin());
-//                }
-//            }
-//        }
+            if(currentStep instanceof Parameterizing) {
+                Parameters parameters = ((Parameterizing) currentStep).getParameters();
+                for(Traversal.Admin trav : parameters.getTraversals()) {
+                    for(Object ss : trav.getSteps()) {
+                        if(ss instanceof Scoping) {
+                            Set<String> labels = ((Scoping) ss).getScopeKeys();
+                            for(String label : labels) {
+                                if (foundLabels.contains(label)) {
+                                    keepLabels.add(label);
+                                } else {
+                                    // it'll get added later, b/c we can drop after this step
+                                    foundLabels.add(label);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(currentStep instanceof Scoping) {
+                Set<String> labels = new HashSet<>(((Scoping) currentStep).getScopeKeys());
+                if(currentStep instanceof MatchStep) {
+                    labels.addAll(((MatchStep) currentStep).getMatchEndLabels());
+                    labels.addAll(((MatchStep) currentStep).getMatchStartLabels());
+                }
+                for(final String label : labels) {
+                    if(foundLabels.contains(label)) {
+                        keepLabels.add(label);
+                    } else {
+                        foundLabels.add(label);
+                    }
+                }
+            }
+
+            if(currentStep instanceof PathProcessor) {
+                        System.out.println(currentStep);
+                        System.out.println(keepLabels);
+                ((PathProcessor) currentStep).setKeepLabels(new HashSet<>(keepLabels));
+            }
+        }
+    }
+
+    @Override
+    public Set<Class<? extends OptimizationStrategy>> applyPrior() {
+        return PRIORS;
     }
 }

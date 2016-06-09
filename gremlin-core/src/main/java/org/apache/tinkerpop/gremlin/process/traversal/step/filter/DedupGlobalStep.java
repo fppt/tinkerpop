@@ -206,4 +206,7 @@ public final class DedupGlobalStep<S> extends FilterStep<S> implements Traversal
     public MemoryComputeKey<Map<Object, Traverser.Admin<S>>> getMemoryComputeKey() {
         return MemoryComputeKey.of(this.getId(), (BinaryOperator) Operator.addAll, false, true);
     }
+
+    @Override
+    public Set<String> getKeepLabels() { return this.keepLabels; }
 }

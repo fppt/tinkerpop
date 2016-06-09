@@ -69,4 +69,6 @@ public interface PathProcessor {
             traverser.asAdmin().keepLabels(labels);
         }
     }
+
+    Set<String> getKeepLabels();
 }

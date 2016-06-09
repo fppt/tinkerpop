@@ -114,4 +114,7 @@ public final class PathStep<S> extends MapStep<S, Path> implements TraversalPare
         PathProcessor.keepLabels(traverser, keepLabels);
         return traverser;
     }
+
+    @Override
+    public Set<String> getKeepLabels() { return this.keepLabels; }
 }

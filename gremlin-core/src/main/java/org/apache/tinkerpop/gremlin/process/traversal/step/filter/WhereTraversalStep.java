@@ -46,6 +46,10 @@ public final class WhereTraversalStep<S> extends FilterStep<S> implements Traver
 
     protected Traversal.Admin<?, ?> whereTraversal;
     protected final Set<String> scopeKeys = new HashSet<>();
+    protected Set<String> keepLabels;
+
+    @Override
+    public Set<String> getKeepLabels() { return this.keepLabels; }
 
     public WhereTraversalStep(final Traversal.Admin traversal, final Traversal<?, ?> whereTraversal) {
         super(traversal);

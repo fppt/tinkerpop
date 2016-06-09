@@ -40,10 +40,10 @@ import static org.junit.Assert.*;
  */
 public class PathTest {
 
-//    private final static List<Supplier<Path>> PATH_SUPPLIERS =
-//            Arrays.asList(MutablePath::make, ImmutablePath::make, DetachedPath::make, ReferencePath::make);
     private final static List<Supplier<Path>> PATH_SUPPLIERS =
-        Arrays.asList(ImmutablePath::make);
+            Arrays.asList(MutablePath::make, ImmutablePath::make, DetachedPath::make, ReferencePath::make);
+//    private final static List<Supplier<Path>> PATH_SUPPLIERS =
+//        Arrays.asList(ImmutablePath::make);
 
     @Test
     public void shouldHaveStandardSemanticsImplementedCorrectly() {

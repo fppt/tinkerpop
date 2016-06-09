@@ -23,6 +23,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Pop;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.ImmutablePath;
+import org.apache.tinkerpop.gremlin.process.traversal.step.util.MutablePath;
 import org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceFactory;
 
 import java.util.HashSet;
@@ -106,7 +107,11 @@ public class B_LP_O_S_SE_SL_Traverser<T> extends B_O_S_SE_SL_Traverser<T> {
 
     @Override
     public void dropPath() {
-        this.path = ImmutablePath.make();
+        if(path instanceof ImmutablePath) {
+            this.path = ImmutablePath.make();
+        } else {
+            this.path = MutablePath.make();
+        }
     }
 
     @Override

@@ -123,9 +123,12 @@ public final class SelectOneStep<S, E> extends MapStep<S, E> implements Traversa
     }
 
     @Override
+    public Set<String> getKeepLabels() { return this.keepLabels; }
+
+    @Override
     protected Traverser.Admin<E> processNextStart() {
         final Traverser.Admin<E> traverser = super.processNextStart();
-        if(keepLabels != null && keepLabels.size() > 0) {
+        if(!(this.getTraversal().getParent() instanceof MatchStep)) {
             PathProcessor.keepLabels(traverser, keepLabels);
         }
         return traverser;
