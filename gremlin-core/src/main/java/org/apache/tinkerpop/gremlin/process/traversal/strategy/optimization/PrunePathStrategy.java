@@ -118,6 +118,10 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
             if(currentStep instanceof PathProcessor) {
                         System.out.println(currentStep);
                         System.out.println(keepLabels);
+                if(i != traversal.getSteps().size()) {
+                    // add in all match labels
+                    ((PathProcessor) currentStep).setKeepLabels(new HashSet<>(foundLabels));
+                }
                 ((PathProcessor) currentStep).setKeepLabels(new HashSet<>(keepLabels));
             }
         }

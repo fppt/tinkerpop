@@ -387,12 +387,14 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
     @Override
     protected Traverser.Admin<Map<String, E>> processNextStart() throws NoSuchElementException {
         final Traverser.Admin<Map<String, E>> traverser = super.processNextStart();
-        // add traverser tags in
-        Set<String> labels = new HashSet<>();
-        labels.addAll(traverser.getTags());
-        if(keepLabels != null ) labels.addAll(keepLabels);
-        if(keepLabels != null) System.out.println(labels);
-        PathProcessor.keepLabels(traverser, labels);
+        if(keepLabels != null) {
+            // add traverser tags in
+            Set<String> labels = new HashSet<>();
+            labels.addAll(traverser.getTags());
+            if (keepLabels != null) labels.addAll(keepLabels);
+            if (keepLabels != null) System.out.println(labels);
+            PathProcessor.keepLabels(traverser, labels);
+        }
         return traverser;
     }
 

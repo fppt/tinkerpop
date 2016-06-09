@@ -20,6 +20,7 @@ package org.apache.tinkerpop.gremlin.tinkergraph.structure;
 
 import org.apache.tinkerpop.gremlin.process.computer.bulkloading.BulkLoaderVertexProgram;
 import org.apache.tinkerpop.gremlin.process.traversal.Operator;
+import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Scope;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
@@ -38,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -303,7 +305,7 @@ public class TinkerGraphPlayTest {
     }
 
     @Test
-    public void testPaths() {
+    public void testPaths() throws IOException {
         Graph graph = TinkerGraph.open();
         GraphTraversalSource g = graph.traversal();
 
@@ -323,13 +325,15 @@ public class TinkerGraphPlayTest {
         d.addEdge("knows", e);
 
         graph = TinkerFactory.createModern();
+//        graph = TinkerGraph.open();
+//        graph.io(GraphMLIo.build()).readGraph("/Users/twilmes/work/repos/incubator-tinkerpop/gremlin-test/src/main/resources/org/apache/tinkerpop/gremlin/structure/io/graphml/grateful-dead.xml");
         g = graph.traversal();//.withComputer();
 
 //        a.addEdge("knows", b, "a", 1);
 
 //        g.withComputer().V().out().as("fan").out().as("back").out().select("fan").iterate();
 
-        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").barrier().profile().next());
+//        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").barrier().profile().next());
 //        System.out.println(g.V(a).out("knows").as("a").out("knows").where(neq("a")).out("knows").toList());
 //        System.out.println(g.V(a).out("knows").as("a").out("knows").out("knows").toList());
 //        System.out.println(g.V(a).out().as("a").out().out().select("a", "b").barrier().profile().next());
@@ -342,24 +346,21 @@ public class TinkerGraphPlayTest {
 //                as("b").match(
 //                        as("b").out("created").as("d"),
 //                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
-//        System.out.println(g.V().match(
-//                as("a").out("knows").as("b"),
-//                as("b").out("created").has("name", "lop"),
-//                as("b").match(
-//                        as("b").out("created").as("d"),
-//                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
+        System.out.println(g.V().match(
+                as("a").out("knows").as("b"),
+                as("b").out("created").has("name", "lop"),
+                as("b").match(
+                        as("b").out("created").as("d"),
+                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
 //        System.out.println(g.V().aggregate("x").as("a").select("x").unfold().addE("existsWith").to("a").property("time", "now").toList());
 
-        System.out.println(g.V().match(
-                where("a", P.neq("c")),
-                as("a").out("created").as("b"),
-                or(
-                        as("a").out("knows").has("name", "vadas"),
-                        as("a").in("knows").and().as("a").has(T.label, "person")
-                ),
-                as("b").in("created").as("c"),
-                as("b").in("created").count().is(P.gt(1)))
-                .select("a", "b", "c").by(T.id).toList());
+        // tricky b/c "weight" depends on "e" but since "e" isn't referenced after that select, the object
+        // is dropped
+//        System.out.println("Result" + g.V().outE().as("e").inV().as("v").select("e").order().by("weight", Order.incr).select("v").values("name").dedup().toList());
+        //
+//        System.out.println(g.V().outE().as("e").inV().as("v").
+//                select("e").order().by("weight", Order.incr).select("v").<String>values("name").dedup().toList());
+//        System.out.println(g.V().choose(__.outE().count().is(0L), __.as("a"), __.as("b")).choose(__.select("a"), __.select("a"), __.select("b")).toList());
     }
 
     @Test
