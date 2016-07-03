@@ -18,6 +18,7 @@
  */
 package org.apache.tinkerpop.gremlin.process.traversal.strategy.optimization;
 
+import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategies;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
@@ -27,12 +28,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.P.neq;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.as;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -43,10 +48,10 @@ import static org.junit.Assert.assertNull;
 public class PrunePathStrategyTest {
 
     @Parameterized.Parameter(value = 0)
-    public Traversal traversal;
+    public Traversal.Admin traversal;
 
     @Parameterized.Parameter(value = 1)
-    public Set<String> labels;
+    public List<Set<String>> labels;
 
     void applyPrunePathStrategy(final Traversal traversal) {
         final TraversalStrategies strategies = new DefaultTraversalStrategies();
@@ -58,22 +63,38 @@ public class PrunePathStrategyTest {
     @Test
     public void doTest() {
         applyPrunePathStrategy(traversal);
-        assertEquals(labels, ((PathProcessor)traversal.asAdmin().getEndStep()).getKeepLabels());
+        // get all path processors
+        List<Set<String>> keepLabels = getKeepLabels(traversal);
+
+        assertEquals(labels, keepLabels);
+    }
+
+    private List<Set<String>> getKeepLabels(Traversal.Admin traversal) {
+        List<Set<String>> keepLabels = new ArrayList<>();
+        for(Step step : (List<Step>)traversal.getSteps()) {
+            if(step instanceof PathProcessor) {
+                keepLabels.add(((PathProcessor) step).getKeepLabels());
+            }
+        }
+        return keepLabels;
     }
 
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<Object[]> generateTestParameters() {
 
-        return Arrays.asList(new Traversal[][]{
-                {__.V().as("a").out().as("b").where(neq("a")).out(), }
-//                {__.V().as("a").select("a"), Arrays.asList(1, 2, 3)}
-//                {__.V().as("a").out().where(neq("a")), __.V().as("a").out().where(neq("a"))},
-//                {__.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b"), __.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b")}
-//                {__.V().as("a").out().as("b").out().where((neq("a"))).both().values("name"), __.V().as("a").out().out().where(neq("a")).prunePath(true, "a").both().values("name")},
-//                {__.V().as("a").out().as("b").select("a", "b"), __.V().as("a").out().as("b").select("a", "b")},
-//                {__.V().as("a").out().as("b").out().as("c").select("a", "b"), __.V().as("a").out().as("b").out().select("a", "b")},
-//                {__.V().as("a").out().as("b").select("a"), __.V().as("a").out().select("a")},
-//                {__.out().as("a").out().dedup("a").out(), __.out().as("a").out().dedup("a").prunePath(true, "a").out()}
+        return Arrays.asList(new Object[][]{
+                {__.V().as("a").out().as("b").where(neq("a")).out(), Arrays.asList(Collections.EMPTY_SET)},
+                {__.V().as("a").out().where(neq("a")).out().select("a"), Arrays.asList(Collections.singleton("a"), Collections.EMPTY_SET)},
+                {__.V().match(__.as("a").out().as("b")), Arrays.asList(new HashSet<>(Arrays.asList("a", "b")))},
+                // This test is a bit deceiving, a match will report back that it is keeping all of its start and end labels
+                // to prevent child match traversals from dropping labels that are required by the parent.
+                // In reality, the MatchStep will be dropping all starts and ends that are not required by latter
+                // steps in the traversal.
+                {__.V().match(__.as("a").out().as("b")).select("a"), Arrays.asList(new HashSet<>(Arrays.asList("a", "b")), Collections.EMPTY_SET)},
+                {__.V().out().out().match(
+                        as("a").in("created").as("b"),
+                        as("b").in("knows").as("c")).select("c").out("created").where(neq("a")).values("name"),
+                        Arrays.asList(new HashSet<>(Arrays.asList("a", "b", "c")), Collections.singleton("a"), Collections.EMPTY_SET)}
         });
     }
 }
