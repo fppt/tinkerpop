@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.P.neq;
@@ -41,10 +43,10 @@ import static org.junit.Assert.assertNull;
 public class PrunePathStrategyTest {
 
     @Parameterized.Parameter(value = 0)
-    public Traversal original;
+    public Traversal traversal;
 
     @Parameterized.Parameter(value = 1)
-    public Traversal optimized;
+    public Set<String> labels;
 
     void applyPrunePathStrategy(final Traversal traversal) {
         final TraversalStrategies strategies = new DefaultTraversalStrategies();
@@ -55,17 +57,18 @@ public class PrunePathStrategyTest {
 
     @Test
     public void doTest() {
-        applyPrunePathStrategy(original);
-        assertEquals(optimized, original);
-        assertNull(((PathProcessor)optimized.asAdmin().getEndStep()).getKeepLabels());
+        applyPrunePathStrategy(traversal);
+        assertEquals(labels, ((PathProcessor)traversal.asAdmin().getEndStep()).getKeepLabels());
     }
 
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<Object[]> generateTestParameters() {
 
         return Arrays.asList(new Traversal[][]{
+                {__.V().as("a").out().as("b").where(neq("a")).out(), }
+//                {__.V().as("a").select("a"), Arrays.asList(1, 2, 3)}
 //                {__.V().as("a").out().where(neq("a")), __.V().as("a").out().where(neq("a"))},
-                {__.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b"), __.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b")}
+//                {__.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b"), __.V().match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("b")}
 //                {__.V().as("a").out().as("b").out().where((neq("a"))).both().values("name"), __.V().as("a").out().out().where(neq("a")).prunePath(true, "a").both().values("name")},
 //                {__.V().as("a").out().as("b").select("a", "b"), __.V().as("a").out().as("b").select("a", "b")},
 //                {__.V().as("a").out().as("b").out().as("c").select("a", "b"), __.V().as("a").out().as("b").out().select("a", "b")},

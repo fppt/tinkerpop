@@ -42,8 +42,6 @@ public class PathTest {
 
     private final static List<Supplier<Path>> PATH_SUPPLIERS =
             Arrays.asList(MutablePath::make, ImmutablePath::make, DetachedPath::make, ReferencePath::make);
-//    private final static List<Supplier<Path>> PATH_SUPPLIERS =
-//        Arrays.asList(ImmutablePath::make);
 
     @Test
     public void shouldHaveStandardSemanticsImplementedCorrectly() {
@@ -86,7 +84,10 @@ public class PathTest {
             path = path.retract(Collections.singleton("a"));
             assertFalse(path.hasLabel("a"));
             assertTrue(path.hasLabel("d"));
-            path.retract(new HashSet<>(Arrays.asList("c", "d")));
+            path = path.retract(new HashSet<>(Arrays.asList("c", "d")));
+            assertFalse(path.hasLabel("c"));
+            assertFalse(path.hasLabel("d"));
+            // todo add object assert to check retract behavior
         });
     }
 

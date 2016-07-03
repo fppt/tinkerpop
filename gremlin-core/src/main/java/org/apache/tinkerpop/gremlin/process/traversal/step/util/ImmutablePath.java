@@ -79,6 +79,62 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
         return new ImmutablePath(this.previousPath, this.currentObject, temp);
     }
 
+//    @Override
+    public Path retract3(final Set<String> retractLabels) {
+        if(retractLabels == null || retractLabels.isEmpty()) {
+            return this;
+        }
+
+        List<Set<String>> labelList = this.labels();
+        boolean found = false;
+        for(Set<String> labelSet : labelList) {
+            if (!Collections.disjoint(labelSet, retractLabels)) {
+                found = true;
+                break;
+            }
+        }
+        if(!found) {
+            return this;
+        }
+        return this;
+    }
+
+    private Path retract(final Set<String> labels, final List<Path> pathTrail) {
+        Path current = pathTrail.get(0);
+        if (current instanceof TailPath) {
+            // return head
+            return pathTrail.get(pathTrail.size() - 1);
+        } else {
+            ImmutablePath immutablePath = (ImmutablePath) current;
+            if(!Collections.disjoint(labels, immutablePath.currentLabels)) {
+                // clone all the way back up and replace parents
+                ImmutablePath parentPath = null;
+                for(int i = pathTrail.size() - 1; i > 0; i--) {
+                    ImmutablePath clonedPath = cloneImmutablePath((ImmutablePath)pathTrail.get(i));
+                    if(parentPath != null) {
+                        parentPath.previousPath = clonedPath;
+                    }
+                    parentPath = clonedPath;
+                    pathTrail.set(i, clonedPath);
+                }
+                ImmutablePath clonedCurrent = cloneImmutablePath(immutablePath);
+                clonedCurrent.currentLabels.removeAll(labels);
+                if(clonedCurrent.currentLabels.isEmpty()) {
+                    if(pathTrail.size() > 1) {
+                        ((ImmutablePath) pathTrail.get(1)).previousPath = clonedCurrent.previousPath;
+                    } else {
+                        pathTrail.remove(0);
+                    }
+                }
+                pathTrail.add(clonedCurrent.previousPath);
+            } else {
+                pathTrail.add(((ImmutablePath) pathTrail.get(0)).previousPath);
+            }
+            retract(labels, pathTrail);
+        }
+        return null;
+    }
+
     @Override
     public Path retract(final Set<String> labels) {
         ImmutablePath parent;
@@ -103,7 +159,8 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
             clone.currentLabels.removeAll(labels);
             clone.previousPath = TailPath.instance();
             if(clone.currentLabels.isEmpty()) {
-                clone.currentObject = null;
+                // return the previous tail path because this path segment can be dropped
+                return clone.previousPath;
             }
             return clone;
         }
@@ -119,7 +176,11 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
         if(!Collections.disjoint(parent.currentLabels, labels)) {
             ImmutablePath clonedParent = cloneImmutablePath(parent);
             clonedParent.currentLabels.removeAll(labels);
-            parent = clonedParent;
+            if(clonedParent.currentLabels.isEmpty()) {
+                parent = (ImmutablePath) parent.previousPath;
+            } else {
+                parent = clonedParent;
+            }
         }
 
         // store the head and return it at the end of this
@@ -128,9 +189,7 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
         // parents can be a mixture of ImmutablePaths and collapsed
         // cloned ImmutablePaths that are a result of branching
         List<Object> parents = new ArrayList<>();
-        ImmutablePath previous = null;
         parents.add(parent);
-        Set<String> foundLabels = new HashSet<>();
 
         while(true) {
 
@@ -149,6 +208,9 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
             // clone child
             ImmutablePath clone = cloneImmutablePath(child);
             clone.currentLabels.removeAll(labels);
+            if(clone.currentLabels.isEmpty()) {
+                clone.currentObject = null;
+            }
 
 
             // walk back up and build parent clones or reuse
@@ -172,7 +234,11 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
                 }
 
 //                if(previous == null) {
+                if(clone.currentLabels.isEmpty()) {
+                    lastPath.previousPath = clone.previousPath;
+                } else {
                     lastPath.previousPath = clone;
+                }
                     // hack!
 //                    break;
 //                }
@@ -187,35 +253,7 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
                 }
 
                 child = (ImmutablePath)child.previousPath;
-
-//                for(int i = parents.size() - 1; i  >= 0; i--) {
-//                    final Object o = parents.get(i);
-//                    if (o instanceof ImmutablePath) {
-//                        ImmutablePath p = (ImmutablePath) o;
-//                        final ImmutablePath clonedP = cloneImmutablePath(p);
-//                        if (previous == null) {
-//                            clonedP.previousPath = clone;
-//                        } else {
-//                            clonedP.previousPath = previous;
-//                        }
-//                        if(first) {
-//                            head = clonedP;
-//                        }
-//                        previous = clonedP;
-//                    } else {
-//                        previous = ((ImmutablePath) o);
-//                    }
-//                    if(first) {
-//
-//                        first = false;
-//                    }
-                }
-//                parents = new ArrayList<>();
-//                parents.add(clone);
-
-
-//            parents.add(clone);
-//            child = (ImmutablePath)child.previousPath;
+            }
         }
 
         return head;

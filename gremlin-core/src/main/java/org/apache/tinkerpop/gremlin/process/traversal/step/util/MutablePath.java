@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -87,14 +88,23 @@ public class MutablePath implements Path, Serializable {
     }
 
     @Override
-    public Path retract(final Set<String> labels) {
+    public Path retract(final Set<String> removeLabels) {
         for (int i = this.labels.size() - 1; i >= 0; i--) {
-            for (final String label : labels) {
-                if (this.labels().get(i).contains(label)) {
-                    this.labels.get(i).remove(label);
-                    if (this.labels.get(i).size() == 0) {
-                        for(int x = 0; x < this.objects.size(); x++) this.objects.remove(0);
-                        continue;
+            for (final String label : removeLabels) {
+                synchronized (this.labels.get(i)) {
+                    if (this.labels().get(i).contains(label)) {
+                        this.labels.get(i).remove(label);
+                        System.out.println("REMOVED: " + label);
+                        boolean empty = false;
+                        if (this.labels.get(i).size() == 0) {
+                            this.labels.remove(i);
+                            this.objects.remove(i);
+                            empty = true;
+                        }
+                        // label was found, so break out
+                        if(empty) {
+                            break;
+                        }
                     }
                 }
             }

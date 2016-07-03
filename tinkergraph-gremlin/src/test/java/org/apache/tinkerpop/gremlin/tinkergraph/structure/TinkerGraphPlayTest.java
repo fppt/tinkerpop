@@ -18,6 +18,7 @@
  */
 package org.apache.tinkerpop.gremlin.tinkergraph.structure;
 
+import org.apache.tinkerpop.gremlin.process.computer.Computer;
 import org.apache.tinkerpop.gremlin.process.computer.bulkloading.BulkLoaderVertexProgram;
 import org.apache.tinkerpop.gremlin.process.traversal.Operator;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -32,6 +33,7 @@ import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.io.graphml.GraphMLIo;
 import org.apache.tinkerpop.gremlin.structure.util.GraphFactory;
+import org.apache.tinkerpop.gremlin.tinkergraph.process.computer.TinkerGraphComputer;
 import org.apache.tinkerpop.gremlin.util.TimeUtil;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -53,6 +55,7 @@ import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.count;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.fold;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.has;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.in;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.not;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.or;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.out;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.outE;
@@ -326,8 +329,30 @@ public class TinkerGraphPlayTest {
 
         graph = TinkerFactory.createModern();
 //        graph = TinkerGraph.open();
-//        graph.io(GraphMLIo.build()).readGraph("/Users/twilmes/work/repos/incubator-tinkerpop/gremlin-test/src/main/resources/org/apache/tinkerpop/gremlin/structure/io/graphml/grateful-dead.xml");
-        g = graph.traversal();//.withComputer();
+        //graph.io(GraphMLIo.build()).readGraph("/Users/twilmes/work/repos/incubator-tinkerpop/gremlin-test/src/main/resources/org/apache/tinkerpop/gremlin/structure/io/graphml/grateful-dead.xml");
+        g = graph.traversal().withComputer(Computer.compute(TinkerGraphComputer.class).workers(1));
+
+//        System.out.println(
+//                g.V().as("a").out().as("b").
+//                        match(
+//                                as("a").out().count().as("c"),
+//                                or(
+//                                        as("a").out("knows").as("b"),
+//                                        as("b").in().count().as("c").and().as("c").is(P.gt(2))
+//                                )
+//                        ).select("a").toList());
+
+        System.out.println(g.V().out().out().match(
+                as("a").in("created").as("b"),
+                as("b").in("knows").as("c")).select("c").out("created").values("name").toList());
+
+        System.out.println(g.V().match(
+                as("a").out().as("b")).
+                    select("b").by(T.id).toList());
+
+        // [{a=v[1], b=v[3], c=3}, {a=v[1], b=v[2], c=3}, {a=v[1], b=v[4], c=3}]
+        // [{a=v[1], b=v[3], c=3}, {a=v[1], b=v[2], c=3}, {a=v[1], b=v[4], c=3}]
+        // [{a=v[6], b=v[3]}, {a=v[4], b=v[3]}, {a=v[1], b=v[3]}, {a=v[1], b=v[2]}, {a=v[1], b=v[4]}]
 
 //        a.addEdge("knows", b, "a", 1);
 
@@ -338,7 +363,22 @@ public class TinkerGraphPlayTest {
 //        System.out.println(g.V(a).out("knows").as("a").out("knows").out("knows").toList());
 //        System.out.println(g.V(a).out().as("a").out().out().select("a", "b").barrier().profile().next());
 
-//        System.out.println(g.V().as("a").match(__.as("a").out().as("b"), __.as("b").out().as("c")).select("a", "b", "c").toList());
+//        System.out.println(g.V().as("a").match(
+//                        where("a", neq("b")),
+//                __.as("a").out().as("b"),
+//                __.as("b").out().as("c")).
+//                    select("a", "b", "c").by(T.id).toList());
+
+//        System.out.println(g.V().<Vertex>match(
+//                as("a").both().as("b"),
+//                as("b").both().as("c")).dedup("a", "b").toList().size());
+
+//        System.out.println(g.V(v1Id).out().has(T.id, P.lt(v3Id)).toList());
+
+//        System.out.println(g.V().out("created")
+//                .union(as("project").in("created").has("name", "marko").select("project"),
+//                        as("project").in("created").in("knows").has("name", "marko").select("project")).
+//                            groupCount().by("name").toList());
 
 //        System.out.println(g.V().match(
 //                as("a").out("knows").as("b"),
@@ -346,13 +386,18 @@ public class TinkerGraphPlayTest {
 //                as("b").match(
 //                        as("b").out("created").as("d"),
 //                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
-        System.out.println(g.V().match(
-                as("a").out("knows").as("b"),
-                as("b").out("created").has("name", "lop"),
-                as("b").match(
-                        as("b").out("created").as("d"),
-                        as("d").in("created").as("c")).select("c").as("c")).<Vertex>select("a", "b", "c").toList());
-//        System.out.println(g.V().aggregate("x").as("a").select("x").unfold().addE("existsWith").to("a").property("time", "now").toList());
+//        System.out.println(
+//            g.V().match(
+//                as("a").out("knows").as("b"),
+//                as("b").out("created").has("name", "lop"),
+//                as("b").match(
+//                        as("b").out("created").as("d"),
+//                        as("d").in("created").as("c")).select("c").as("c")).
+//                    <Vertex>select("a", "b", "c").toList());
+//
+//
+//
+// System.out.println(g.V().aggregate("x").as("a").select("x").unfold().addE("existsWith").to("a").property("time", "now").toList());
 
         // tricky b/c "weight" depends on "e" but since "e" isn't referenced after that select, the object
         // is dropped

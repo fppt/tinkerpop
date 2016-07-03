@@ -185,6 +185,8 @@ public interface Traverser<T> extends Serializable, Comparable<Traverser<T>>, Cl
 
         public void keepLabels(final Set<String> labels);
 
+        public void dropLabels(final Set<String> labels);
+
         public void dropPath();
 
         /**

@@ -101,7 +101,15 @@ public class B_LP_O_S_SE_SL_Traverser<T> extends B_O_S_SE_SL_Traverser<T> {
                 this.path = this.path.retract(retractLabels);
             } catch (Exception e) {
                 // todo don't retract if it's a head path
+                e.printStackTrace();
             }
+        }
+    }
+
+    @Override
+    public void dropLabels(final Set<String> labels) {
+        if(!labels.isEmpty()) {
+            this.path = this.path.retract(labels);
         }
     }
 

@@ -97,6 +97,11 @@ public class LP_O_OB_P_S_SE_SL_Traverser<T> extends O_OB_S_SE_SL_Traverser<T> {
     }
 
     @Override
+    public void dropLabels(final Set<String> labels) {
+        this.path = path.retract(new HashSet(labels));
+    }
+
+    @Override
     public void dropPath() {
         this.path = ImmutablePath.make();
     }

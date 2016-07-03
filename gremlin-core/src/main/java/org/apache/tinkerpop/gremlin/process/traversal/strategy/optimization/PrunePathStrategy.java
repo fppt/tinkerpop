@@ -103,8 +103,11 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
             if(currentStep instanceof Scoping) {
                 Set<String> labels = new HashSet<>(((Scoping) currentStep).getScopeKeys());
                 if(currentStep instanceof MatchStep) {
-                    labels.addAll(((MatchStep) currentStep).getMatchEndLabels());
-                    labels.addAll(((MatchStep) currentStep).getMatchStartLabels());
+                    // if this is the last step, keep everything, else just add founds
+                    if(currentStep.getNextStep() instanceof EmptyStep) {
+                        labels.addAll(((MatchStep) currentStep).getMatchEndLabels());
+                        labels.addAll(((MatchStep) currentStep).getMatchStartLabels());
+                    }
                 }
                 for(final String label : labels) {
                     if(foundLabels.contains(label)) {
@@ -116,8 +119,8 @@ public final class PrunePathStrategy extends AbstractTraversalStrategy<Traversal
             }
 
             if(currentStep instanceof PathProcessor) {
-                        System.out.println(currentStep);
-                        System.out.println(keepLabels);
+//                        System.out.println(currentStep);
+//                        System.out.println(keepLabels);
                 if(i != traversal.getSteps().size()) {
                     // add in all match labels
                     ((PathProcessor) currentStep).setKeepLabels(new HashSet<>(foundLabels));

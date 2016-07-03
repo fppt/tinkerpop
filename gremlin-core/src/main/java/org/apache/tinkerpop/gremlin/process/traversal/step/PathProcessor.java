@@ -64,7 +64,7 @@ public interface PathProcessor {
 
     static void keepLabels(final Traverser traverser, final Set<String> labels) {
         if(labels == null || labels.isEmpty()) {
-            traverser.asAdmin().dropPath();
+            //traverser.asAdmin().dropPath();
         } else {
             traverser.asAdmin().keepLabels(labels);
         }

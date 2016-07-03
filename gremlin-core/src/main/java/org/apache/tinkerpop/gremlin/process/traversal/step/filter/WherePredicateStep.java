@@ -125,7 +125,7 @@ public final class WherePredicateStep<S> extends FilterStep<S> implements Scopin
         Set<String> labels = new HashSet<>();
         labels.addAll(traverser.getTags());
         if(keepLabels != null ) labels.addAll(keepLabels);
-        if(keepLabels != null) System.out.println(labels);
+//        if(keepLabels != null) System.out.println(labels);
         PathProcessor.keepLabels(traverser, labels);
         return traverser;
     }
