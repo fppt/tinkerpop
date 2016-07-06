@@ -323,13 +323,13 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
                 if (this.connective == ConnectiveStep.Connective.AND) {
                     final Traversal.Admin<Object, Object> matchTraversal = this.getMatchAlgorithm().apply(traverser);
                     // drop any labels that we can
-                    dropUnnecessaryLabels(traverser, matchTraversal);
+//                    dropUnnecessaryLabels(traverser, matchTraversal);
                     traverser.getTags().add(matchTraversal.getStartStep().getId());
                     matchTraversal.addStart(traverser); // determine which sub-pattern the traverser should try next
                 } else {  // OR
                     for (final Traversal.Admin<?, ?> matchTraversal : this.matchTraversals) {
                         final Traverser.Admin split = traverser.split();
-                        dropUnnecessaryLabels(traverser, matchTraversal);
+//                        dropUnnecessaryLabels(traverser, matchTraversal);
                         split.getTags().add(matchTraversal.getStartStep().getId());
                         matchTraversal.addStart(split);
                     }
@@ -340,6 +340,9 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
 
     private void dropUnnecessaryLabels(final Traverser.Admin<Object> traverser,
                                        final Traversal.Admin matchTraversal) {
+        if(keepLabels == null) {
+            return;
+        }
         final List<Traversal.Admin> remainingTraversals = getRemainingTraversals(traverser);
         remainingTraversals.add(matchTraversal);
         HashSet<String> requiredLabels = new HashSet<>();
@@ -347,11 +350,14 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
             getRequiredLabels(trav, requiredLabels);
         });
         requiredLabels.addAll(keepLabels);
+        if(dedupLabels != null) {
+            requiredLabels.addAll(dedupLabels);
+        }
         requiredLabels.add(matchTraversal.getStartStep().getId());
-        System.out.println(requiredLabels);
-        System.out.println("Before:\t" + traverser.path().labels() + "\t" + traverser.path().objects());
+//        System.out.println(requiredLabels);
+//        System.out.println("Before:\t" + traverser.path().labels() + "\t" + traverser.path().objects());
         traverser.keepLabels(requiredLabels);
-        System.out.println("After:\t" + traverser.path().labels() + "\t" + traverser.path().objects());
+//        System.out.println("After:\t" + traverser.path().labels() + "\t" + traverser.path().objects());
     }
 
     @Override
@@ -376,13 +382,13 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
                     final Traversal.Admin<Object, Object> matchTraversal = this.getMatchAlgorithm().apply(traverser); // determine which sub-pattern the traverser should try next
                     traverser.getTags().add(matchTraversal.getStartStep().getId());
                     traverser.setStepId(matchTraversal.getStartStep().getId()); // go down the traversal match sub-pattern
-                    dropUnnecessaryLabels(traverser, matchTraversal);
+//                    dropUnnecessaryLabels(traverser, matchTraversal);
                     return IteratorUtils.of(traverser);
                 } else { // OR
                     final List<Traverser.Admin<Map<String, E>>> traversers = new ArrayList<>(this.matchTraversals.size());
                     for (final Traversal.Admin<?, ?> matchTraversal : this.matchTraversals) {
                         final Traverser.Admin split = traverser.split();
-                        //dropUnnecessaryLabels(traverser, matchTraversal);
+//                        dropUnnecessaryLabels(traverser, matchTraversal);
                         split.getTags().add(matchTraversal.getStartStep().getId());
                         split.setStepId(matchTraversal.getStartStep().getId());
                         traversers.add(split);
@@ -429,8 +435,8 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
 //                requiredLabels.addAll(((Scoping) step).getScopeKeys());
 //            }
             if(step instanceof PathProcessor) {
-                Set<String> keep = ((PathProcessor) step).getKeepLabels();
-                if(keep != null) requiredLabels.addAll(keep);
+                //Set<String> keep = ((PathProcessor) step).getKeepLabels();
+                //if(keep != null) requiredLabels.addAll(keep);
             } else if(step instanceof Scoping) {
                 Set<String> keep = ((Scoping)step).getScopeKeys();
                 if(keep != null) requiredLabels.addAll(keep);
@@ -462,6 +468,7 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
     protected Traverser.Admin<Map<String, E>> processNextStart() throws NoSuchElementException {
         final Traverser.Admin<Map<String, E>> traverser = super.processNextStart();
         // remove labels that we don't need
+//        System.out.println("KEEPERS: " + keepLabels);
         if(keepLabels != null) {
             // add traverser tags in
             Set<String> labels = new HashSet<>();
@@ -472,18 +479,25 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
 //            labels.addAll(getMatchEndLabels());
 //            if (keepLabels != null) System.out.println(labels);
             List<Traversal.Admin> remainingTraversals = getRemainingTraversals(traverser);
-            if(remainingTraversals.size() == 0) {
-                System.out.println("none");
+//            System.out.println("REMAINING: " + remainingTraversals.size());
+//            if(remainingTraversals.size() == 1) {
+//                // also remove tags...
+//                System.out.println("Before droppppping: " + traverser.path().labels());
+//                traverser.dropLabels(traverser.getTags());
+//                System.out.println("DROPPPPPING TAGS: " + traverser.path().labels());
+//            }
+//                System.out.println("none");
                 for (Traversal.Admin trav : remainingTraversals) {
                     getRequiredLabels(trav, labels);
                 }
 //                labels.addAll(traverser.getTags());
                 if (keepLabels != null) labels.addAll(keepLabels);
-                System.out.println(labels);
-                System.out.println(traverser.path().labels());
+//                System.out.println(labels);
+//                System.out.println("Before: " + traverser.path().labels());
+//                System.out.println("Keepers: " + labels);
                 PathProcessor.keepLabels(traverser, labels);
-                System.out.println(traverser.path().labels());
-            }
+//                System.out.println("After: " + traverser.path().labels());
+//            }
         }
         return traverser;
     }
@@ -626,12 +640,10 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
             final boolean hasExecuted = traverser.getTags().contains(traversal.getStartStep().getId());
             if(hasExecuted) {
                 String traversalId = traversal.getStartStep().getId();
-                List<String> dropMe = new ArrayList();
-                // drop labels that matched this step id
-                dropMe.add(traversalId);
-                traverser.path().retract(new HashSet(dropMe));
+//                System.out.println("Tag drop: " + traverser.path().labels());
+                traverser.dropLabels(Collections.singleton(traversalId));
+//                System.out.println(traverser.path().labels());
             }
-            // drop all tags
             return hasExecuted;
         }
 
@@ -796,10 +808,11 @@ public final class MatchStep<S, E> extends ComputerAwareStep<S, Map<String, E>> 
 
     @Override
     public void setKeepLabels(Set<String> labels) {
+//        System.out.println("MATCH KEEP: " + labels);
         if(this.keepLabels != null) {
             this.keepLabels.addAll(labels);
         } else {
-            this.keepLabels = labels;
+            this.keepLabels = new HashSet<>(labels);
         }
     }
 

@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static org.apache.tinkerpop.gremlin.process.traversal.P.eq;
 import static org.apache.tinkerpop.gremlin.process.traversal.P.neq;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.and;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.as;
@@ -329,8 +330,8 @@ public class TinkerGraphPlayTest {
 
         graph = TinkerFactory.createModern();
 //        graph = TinkerGraph.open();
-        //graph.io(GraphMLIo.build()).readGraph("/Users/twilmes/work/repos/incubator-tinkerpop/gremlin-test/src/main/resources/org/apache/tinkerpop/gremlin/structure/io/graphml/grateful-dead.xml");
-        g = graph.traversal().withComputer(Computer.compute(TinkerGraphComputer.class).workers(1));
+//        graph.io(GraphMLIo.build()).readGraph("/Users/twilmes/work/repos/incubator-tinkerpop/gremlin-test/src/main/resources/org/apache/tinkerpop/gremlin/structure/io/graphml/grateful-dead.xml");
+        g = graph.traversal().withComputer();//Computer.compute(TinkerGraphComputer.class).workers(1));
 
 //        System.out.println(
 //                g.V().as("a").out().as("b").
@@ -342,13 +343,9 @@ public class TinkerGraphPlayTest {
 //                                )
 //                        ).select("a").toList());
 
-        System.out.println(g.V().out().out().match(
-                as("a").in("created").as("b"),
-                as("b").in("knows").as("c")).select("c").out("created").values("name").toList());
+//        System.out.println(g.V().as("a").out().where(neq("a")).profile().next());
 
-        System.out.println(g.V().match(
-                as("a").out().as("b")).
-                    select("b").by(T.id).toList());
+        System.out.println(g.V().choose(__.outE().count().is(0L), __.as("a"), __.as("b")).choose(__.select("a"), __.select("a"), __.select("b")).toList());
 
         // [{a=v[1], b=v[3], c=3}, {a=v[1], b=v[2], c=3}, {a=v[1], b=v[4], c=3}]
         // [{a=v[1], b=v[3], c=3}, {a=v[1], b=v[2], c=3}, {a=v[1], b=v[4], c=3}]

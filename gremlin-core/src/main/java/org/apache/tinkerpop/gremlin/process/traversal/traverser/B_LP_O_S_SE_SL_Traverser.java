@@ -97,11 +97,15 @@ public class B_LP_O_S_SE_SL_Traverser<T> extends B_O_S_SE_SL_Traverser<T> {
                     if(labels.contains(l) == false) { retractLabels.add(l); };
                 }
             }
-            try {
+            this.path = this.path.retract(retractLabels);
+        } else if (labels.isEmpty()) {
+            Set<String> retractLabels = new HashSet<>();
+            List<Set<String>> existingLabels = this.path.labels();
+            for(Set<String> labelSet : existingLabels) {
+                retractLabels.addAll(labelSet);
+            }
+            if(!retractLabels.isEmpty()) {
                 this.path = this.path.retract(retractLabels);
-            } catch (Exception e) {
-                // todo don't retract if it's a head path
-                e.printStackTrace();
             }
         }
     }

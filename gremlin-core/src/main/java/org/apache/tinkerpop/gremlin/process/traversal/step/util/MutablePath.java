@@ -83,18 +83,23 @@ public class MutablePath implements Path, Serializable {
 
     @Override
     public Path extend(final Set<String> labels) {
-        this.labels.get(this.labels.size() - 1).addAll(labels);
+        if(labels.size() > 0) {
+            this.labels.get(this.labels.size() - 1).addAll(labels);
+        }
         return this;
     }
 
     @Override
     public Path retract(final Set<String> removeLabels) {
+
+//        removeLabels.removeIf(val -> (val.indexOf("0") >= 0));
+
         for (int i = this.labels.size() - 1; i >= 0; i--) {
             for (final String label : removeLabels) {
                 synchronized (this.labels.get(i)) {
                     if (this.labels().get(i).contains(label)) {
                         this.labels.get(i).remove(label);
-                        System.out.println("REMOVED: " + label);
+//                        System.out.println("REMOVED: " + label);
                         boolean empty = false;
                         if (this.labels.get(i).size() == 0) {
                             this.labels.remove(i);

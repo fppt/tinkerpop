@@ -23,6 +23,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategies;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.process.traversal.step.PathProcessor;
+import org.apache.tinkerpop.gremlin.process.traversal.step.TraversalParent;
 import org.apache.tinkerpop.gremlin.process.traversal.util.DefaultTraversalStrategies;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,16 +65,33 @@ public class PrunePathStrategyTest {
     public void doTest() {
         applyPrunePathStrategy(traversal);
         // get all path processors
-        List<Set<String>> keepLabels = getKeepLabels(traversal);
+        List<Object> keepLabels = getKeepLabels(traversal);
 
         assertEquals(labels, keepLabels);
     }
 
-    private List<Set<String>> getKeepLabels(Traversal.Admin traversal) {
-        List<Set<String>> keepLabels = new ArrayList<>();
+    private List<Object> getKeepLabels(Traversal.Admin traversal) {
+        List<Object> keepLabels = new ArrayList<>();
         for(Step step : (List<Step>)traversal.getSteps()) {
             if(step instanceof PathProcessor) {
-                keepLabels.add(((PathProcessor) step).getKeepLabels());
+                final Set<String> keepers = ((PathProcessor) step).getKeepLabels();
+                if(keepers != null) {
+                    keepLabels.add(keepers);
+                }
+            }
+            if(step instanceof TraversalParent) {
+                for(Traversal.Admin child : ((TraversalParent) step).getGlobalChildren()) {
+                    List<Object> childLabels = getKeepLabels(child);
+                    if(childLabels.size() > 0) {
+                        keepLabels.add(childLabels);
+                    }
+                }
+                for(Traversal.Admin child : ((TraversalParent) step).getLocalChildren()) {
+                    List<Object> childLabels = getKeepLabels(child);
+                    if(childLabels.size() > 0) {
+                        keepLabels.add(childLabels);
+                    }
+                }
             }
         }
         return keepLabels;
@@ -94,7 +112,12 @@ public class PrunePathStrategyTest {
                 {__.V().out().out().match(
                         as("a").in("created").as("b"),
                         as("b").in("knows").as("c")).select("c").out("created").where(neq("a")).values("name"),
-                        Arrays.asList(new HashSet<>(Arrays.asList("a", "b", "c")), Collections.singleton("a"), Collections.EMPTY_SET)}
+                        Arrays.asList(new HashSet<>(Arrays.asList("a", "b", "c")), Collections.singleton("a"), Collections.EMPTY_SET)},
+                {__.V().as("a").out().select("a").path(), Arrays.asList()},
+                {__.V().as("a").out().select("a").subgraph("b"), Arrays.asList()},
+                {__.V().out().as("a").where(neq("a")).out().where(neq("a")), Arrays.asList(Collections.singleton("a"), Collections.EMPTY_SET)},
+//                {__.V().out().as("a").where(neq("a")).out().where(__.out().where(neq("a"))), Arrays.asList(Collections.singleton("a"), Arrays.asList(Collections.EMPTY_SET))}
+//                {__.V().as("a").repeat(__.out().where(neq("a"))), Arrays.asList(Collections.EMPTY_SET)}
         });
     }
 }

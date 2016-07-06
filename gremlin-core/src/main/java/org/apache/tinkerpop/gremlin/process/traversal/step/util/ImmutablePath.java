@@ -100,6 +100,7 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
     }
 
     private Path retract(final Set<String> labels, final List<Path> pathTrail) {
+
         Path current = pathTrail.get(0);
         if (current instanceof TailPath) {
             // return head
@@ -137,6 +138,16 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
 
     @Override
     public Path retract(final Set<String> labels) {
+        if(labels == null || labels.isEmpty()) {
+            return this;
+        }
+
+//        System.out.println("RETRACTING: " + labels);
+//
+//        labels.removeIf(val -> (val.indexOf("0") >= 0));
+//
+//        System.out.println("AFTER LABELS: " + labels);
+
         ImmutablePath parent;
         ImmutablePath child;
 
@@ -383,6 +394,7 @@ public class ImmutablePath implements Path, ImmutablePathImpl, Serializable, Clo
 
         @Override
         public Path extend(final Set<String> labels) {
+            if(labels.size() == 0) { return this; }
             throw new UnsupportedOperationException("A head path can not have labels added to it");
         }
 
